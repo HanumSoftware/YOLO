@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:wakelock/wakelock.dart';
 import 'package:yolo/CreateGameScreen.dart';
 import 'package:yolo/JoinGameScreen.dart';
 import 'package:yolo/MainScreen.dart';
 
 void main() {
   runApp(new MyApp());
+  Wakelock.enable();
 }
 
 class MyApp extends StatelessWidget {

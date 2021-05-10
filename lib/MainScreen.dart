@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:motion_tab_bar/MotionTabBarView.dart';
 import 'package:motion_tab_bar/MotionTabController.dart';
 import 'package:motion_tab_bar/motiontabbar.dart';
-import 'package:yolo/ProtfolioScreen.dart';
 import 'MarketScreen.dart';
+import 'ProtfolioScreen.dart';
 
 class MainScreen extends StatefulWidget {
-  MainScreen({Key key, this.title}) : super(key: key);
-
-  final String title;
+  MainScreen({Key key}) : super(key: key);
 
   @override
   MainScreenState createState() => MainScreenState();
