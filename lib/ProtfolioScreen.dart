@@ -32,10 +32,45 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
                 blurRadius: 1.0),
           ]),
       child: Center(
-        child: Text(
-          "\$100,000",
-          style: TextStyle(
-              fontSize: 34, color: Colors.white, fontWeight: FontWeight.w300),
+        child: Column(
+          children: <Widget>[
+            Container(
+                margin: EdgeInsets.only(top: 24),
+                child: Text(
+                  "Balance:",
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w300),
+                )),
+            Container(
+                margin: EdgeInsets.only(top: 8),
+                child: Text(
+                  "\$100,000",
+                  style: TextStyle(
+                      fontSize: 34,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w300),
+                )),
+            Container(
+                margin: EdgeInsets.only(top: 24),
+                child: Text(
+                  "Age:",
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w300),
+                )),
+            Container(
+                margin: EdgeInsets.only(top: 8),
+                child: Text(
+                  "21",
+                  style: TextStyle(
+                      fontSize: 34,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w300),
+                ))
+          ],
         ),
       ));
 
@@ -54,9 +89,10 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
               blurRadius: 1.0),
         ]),
     child: PieChart(
-        PieChartData(sectionsSpace: 8, sections: [
+        PieChartData(sectionsSpace: 0, sections: [
           PieChartSectionData(
               title: "23%",
+              value: 23,
               color: Color(0xFFF44336),
               titleStyle: TextStyle(
                   color: Colors.white,
@@ -64,6 +100,7 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
                   fontWeight: FontWeight.w500)),
           PieChartSectionData(
               title: "17%",
+              value: 17,
               color: Color(0xFF2196F3),
               titleStyle: TextStyle(
                   color: Colors.white,
@@ -71,6 +108,7 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
                   fontWeight: FontWeight.w500)),
           PieChartSectionData(
               title: "45%",
+              value: 45,
               color: Color(0xFF9C27B0),
               titleStyle: TextStyle(
                   color: Colors.white,
@@ -78,6 +116,7 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
                   fontWeight: FontWeight.w500)),
           PieChartSectionData(
               title: "15%",
+              value: 15,
               color: Color(0xFF69F0AE),
               titleStyle: TextStyle(
                   color: Colors.white,
@@ -111,6 +150,12 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
     'Belgium'
   ];
 
+  void startAnimation() => pc
+      .animatePanelToPosition(0.1,
+          duration: Duration(milliseconds: 1200), curve: Curves.linear)
+      .whenComplete(() => pc.animatePanelToPosition(0,
+          duration: Duration(milliseconds: 1200), curve: Curves.linear));
+
   @override
   void dispose() {
     _controller.dispose();
@@ -119,6 +164,7 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => startAnimation());
     Widget firstColumn = Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,12 +196,6 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
       ),
     );
 
-    startAnimation() => pc
-        .animatePanelToPosition(0.1,
-            duration: Duration(milliseconds: 1200), curve: Curves.linear)
-        .whenComplete(() => pc.animatePanelToPosition(0,
-            duration: Duration(milliseconds: 1200), curve: Curves.linear));
-
     return SlidingUpPanel(
         controller: pc,
         maxHeight: 200,
@@ -183,7 +223,8 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
               offset: pi / 2,
             )),
             Container(
-                margin: const EdgeInsets.only(top: 48, bottom: 80),
+                padding: EdgeInsets.only(bottom: 50),
+                margin: const EdgeInsets.only(top: 0, bottom: 32),
                 child: ListView.builder(
                   padding:
                       EdgeInsets.only(top: 0, right: 0, left: 0, bottom: 50),

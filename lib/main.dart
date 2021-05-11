@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: new ThemeData(
         primarySwatch: Colors.green,
         primaryColor: Colors.green,
-        accentColor: Colors.green,
+        accentColor: Colors.white,
         canvasColor: const Color(0xFFfafafa),
       ),
       home: new MyHomePage(),
@@ -105,9 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void mainScreen() {
-    Navigator.push(
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => MainScreen()),
+      (Route<dynamic> route) => false,
     );
   }
 }

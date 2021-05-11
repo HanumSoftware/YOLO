@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class CreateGameScreen extends StatelessWidget {
   @override
@@ -9,11 +10,20 @@ class CreateGameScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(
-              'This is your game private code:',
-              style: new TextStyle(fontSize: 20.0, fontWeight: FontWeight.w300),
-              textAlign: TextAlign.center,
-            ),
+            Center(
+                child: QrImage(
+              data: "49573223",
+              version: QrVersions.auto,
+              size: 150.0,
+            )),
+            Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Here\'s your game QR code:',
+                  style: new TextStyle(
+                      fontSize: 20.0, fontWeight: FontWeight.w300),
+                  textAlign: TextAlign.center,
+                )),
             SizedBox(height: 16),
             Text(
               '49573223',
