@@ -36,6 +36,7 @@ dependencies:
   fl_chart: ^0.36.1
   qr_flutter: ^4.0.0
   qr_code_scanner: ^0.4.0
+  explosion_animation: ^1.0.3
 
 dev_dependencies:
   flutter_test:

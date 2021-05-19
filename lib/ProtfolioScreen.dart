@@ -2,11 +2,22 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:yolo/circle_painter.dart';
+import 'package:explosion_animation/explosion_animation.dart';
 import 'AnimatedBackground.dart';
 import 'AnimatedWave.dart';
+import 'curve_wave.dart';
+
+var key = Explode.getKey();
 
 class ProtfolioScreen extends StatefulWidget {
-  ProtfolioScreen({Key key}) : super(key: key);
+  const ProtfolioScreen({
+    Key key,
+    this.size = 80.0,
+    @required this.child,
+  }) : super(key: key);
+  final double size;
+  final Widget child;
 
   @override
   ProtfolioScreenState createState() => ProtfolioScreenState();
@@ -14,8 +25,77 @@ class ProtfolioScreen extends StatefulWidget {
 
 class ProtfolioScreenState extends State<ProtfolioScreen>
     with TickerProviderStateMixin {
-  AnimationController _controller;
+  AnimationController rippleController,
+      textAnimationController,
+      cardAnimationController,
+      slideAnimationController;
+  Animation<double> textAnimation;
+  Animation<double> cardAnimation;
+  Animation<Offset> slideAnimation;
   Widget rotationView;
+  bool worldEventVisibility = false;
+  bool giftVisibility = false;
+  bool shouldStopPanel = false;
+  bool shouldPickGift = false;
+  bool shouldRevealCard = false;
+
+  @override
+  void initState() {
+    super.initState();
+    rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+
+    slideAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    textAnimationController = AnimationController(
+        duration: const Duration(seconds: 2),
+        vsync: this,
+        value: 1,
+        upperBound: 1,
+        lowerBound: 0.8)
+      ..repeat(reverse: true);
+
+    cardAnimationController = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+        value: 0.5,
+        upperBound: 1,
+        lowerBound: 0.5);
+
+    textAnimation = CurvedAnimation(
+      parent: textAnimationController,
+      curve: Curves.linear,
+    );
+
+    cardAnimation = CurvedAnimation(
+      parent: cardAnimationController,
+      curve: Curves.linear,
+    );
+
+    slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0.0, 0.5),
+    ).animate(CurvedAnimation(
+      parent: slideAnimationController,
+      curve: Curves.ease,
+    ));
+
+    rotationView = balanceView;
+  }
+
+  @override
+  void dispose() {
+    rippleController.dispose();
+    textAnimationController.dispose();
+    cardAnimationController.dispose();
+    slideAnimationController.dispose();
+    super.dispose();
+  }
 
   Widget balanceView = Container(
       height: 230,
@@ -127,17 +207,6 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
         swapAnimationCurve: Curves.elasticOut),
   );
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this, // the SingleTickerProviderStateMixin
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    rotationView = balanceView;
-  }
-
   final PanelController pc = new PanelController();
 
   final europeanCountries = [
@@ -154,17 +223,123 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
       .animatePanelToPosition(0.1,
           duration: Duration(milliseconds: 1200), curve: Curves.linear)
       .whenComplete(() => pc.animatePanelToPosition(0,
-          duration: Duration(milliseconds: 1200), curve: Curves.linear));
+          duration: Duration(milliseconds: 1200), curve: Curves.linear))
+      .whenComplete(() => {
+            if (!shouldStopPanel) {startAnimation()}
+          });
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void displayWorldEvent() {
+    pc.close().whenComplete(() => setState(() {
+          worldEventVisibility = !worldEventVisibility;
+          giftVisibility = false;
+          shouldPickGift = false;
+        }));
+  }
+
+  void displayGift() {
+    pc.close().whenComplete(() => setState(() {
+          giftVisibility = !giftVisibility;
+          worldEventVisibility = false;
+          shouldPickGift = false;
+        }));
+  }
+
+  void openGift() {
+    pc.hide();
+    setState(() {
+      shouldPickGift = true;
+      worldEventVisibility = false;
+    });
+
+    slideAnimationController.forward();
+    revealGiftCard();
+  }
+
+  void revealGiftCard() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      key.currentState.explode();
+    }).whenComplete(
+        () => Future.delayed(const Duration(milliseconds: 1200), () {
+              cardAnimationController.forward();
+
+              setState(() {
+                shouldRevealCard = true;
+              });
+            }));
+  }
+
+  void displayEndTurn() {}
+
+  void launchWorldEvent() {}
+
+  Widget _worldEvent() {
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(widget.size),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: <Color>[
+                Colors.white,
+                Color.lerp(Colors.white, Colors.black, .05)
+              ],
+            ),
+          ),
+          child: ScaleTransition(
+              scale: Tween(begin: 0.85, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: rippleController,
+                  curve: const CurveWave(),
+                ),
+              ),
+              child: Image(
+                image: AssetImage('assets/world_event.png'),
+                height: 130,
+                width: 130,
+              )),
+        ),
+      ),
+    );
+  }
+
+  Widget _gift() {
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(widget.size),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: <Color>[
+                Colors.white,
+                Color.lerp(Colors.white, Colors.black, .05)
+              ],
+            ),
+          ),
+          child: ScaleTransition(
+              scale: Tween(begin: 0.85, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: rippleController,
+                  curve: const CurveWave(),
+                ),
+              ),
+              child: Explode(
+                key: key,
+                size: Size(130, 130),
+                fit: BoxFit.contain,
+                particleCount: 200,
+                path: 'assets/gift.png',
+                type: ExplodeType.Spread,
+                isAsset: true,
+              )),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => startAnimation());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => {if (!shouldStopPanel) startAnimation()});
     Widget firstColumn = Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,36 +373,120 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
 
     return SlidingUpPanel(
         controller: pc,
-        maxHeight: 200,
+        maxHeight: 220,
         minHeight: 40,
-        panel: Column(),
+        panel: InkWell(
+          onTap: () {
+            pc.open();
+          },
+          child: Container(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                Expanded(
+                    child: InkWell(
+                        splashColor: Colors.black,
+                        onTap: () {
+                          displayGift();
+                        },
+                        child: Container(
+                          margin: EdgeInsets.all(8),
+                          height: 100,
+                          child: Column(children: <Widget>[
+                            Center(
+                                child: Text(
+                              "Gift",
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w400),
+                            )),
+                            Image(
+                              image: AssetImage('assets/gift.gif'),
+                              width: 70,
+                              height: 70,
+                            )
+                          ]),
+                        ))),
+                Expanded(
+                    child: InkWell(
+                        splashColor: Colors.black,
+                        onTap: () {
+                          displayWorldEvent();
+                        },
+                        child: Container(
+                          margin: EdgeInsets.all(8),
+                          child: Column(children: <Widget>[
+                            Center(
+                                child: Text(
+                              "World Event",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w400),
+                            )),
+                            Image(
+                              image: AssetImage('assets/world_event.gif'),
+                              width: 100,
+                              height: 100,
+                            )
+                          ]),
+                          height: 130,
+                        ))),
+                Expanded(
+                    child: InkWell(
+                        splashColor: Colors.black,
+                        onTap: () {
+                          displayEndTurn();
+                        },
+                        child: Container(
+                          margin: EdgeInsets.all(8),
+                          height: 100,
+                          child: Column(children: <Widget>[
+                            Center(
+                                child: Text(
+                              "End Turn",
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w400),
+                            )),
+                            Image(
+                              image: AssetImage('assets/end_turn.gif'),
+                              width: 70,
+                              height: 70,
+                            )
+                          ]),
+                        ))),
+              ],
+            ),
+          ),
+        ),
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(100.0), topRight: Radius.circular(100.0)),
-        onPanelOpened: () => {},
-        onPanelClosed: () => {startAnimation()},
+        onPanelOpened: () => {
+              this.setState(() {
+                shouldStopPanel = true;
+              })
+            },
+        onPanelClosed: () => {},
         body: Stack(
           children: <Widget>[
             Positioned.fill(child: AnimatedBackground()),
             onBottom(AnimatedWave(
-              height: 240,
-              speed: 1.0,
+              height: 340,
+              speed: 0.9,
             )),
             onBottom(AnimatedWave(
-              height: 300,
-              speed: 0.9,
+              height: 390,
+              speed: 0.7,
               offset: pi,
             )),
             onBottom(AnimatedWave(
-              height: 340,
-              speed: 1.2,
+              height: 430,
+              speed: 1,
               offset: pi / 2,
             )),
             Container(
-                padding: EdgeInsets.only(bottom: 50),
-                margin: const EdgeInsets.only(top: 0, bottom: 32),
+                margin: const EdgeInsets.only(top: 0, bottom: 160),
                 child: ListView.builder(
                   padding:
-                      EdgeInsets.only(top: 0, right: 0, left: 0, bottom: 50),
+                      EdgeInsets.only(top: 0, right: 0, left: 0, bottom: 70),
                   itemCount: europeanCountries == null
                       ? 1
                       : europeanCountries.length + 1,
@@ -325,6 +584,139 @@ class ProtfolioScreenState extends State<ProtfolioScreen>
                       ),
                     );
                   },
+                )),
+            AnimatedOpacity(
+                opacity: worldEventVisibility ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 300),
+                child: Container(
+                  height: worldEventVisibility ? double.infinity : 0,
+                  width: double.infinity,
+                  color: Color(0x99000000),
+                  child: Column(children: <Widget>[
+                    CustomPaint(
+                      painter: CirclePainter(
+                        rippleController,
+                        color: Colors.white,
+                      ),
+                      child: SizedBox(
+                        width: widget.size * 4.125,
+                        height: widget.size * 4.125,
+                        child: _worldEvent(),
+                      ),
+                    ),
+                    Container(
+                        margin: EdgeInsets.all(24),
+                        child: Text(
+                          "Launch world event?",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white, fontSize: 28),
+                        )),
+                    Container(
+                        margin: EdgeInsets.only(top: 80),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: <Widget>[
+                            Expanded(
+                                child: Center(
+                                    child: new InkWell(
+                                        onTap: () {
+                                          launchWorldEvent();
+                                        },
+                                        child: Text(
+                                          "Yes",
+                                          style: TextStyle(
+                                              fontSize: 55,
+                                              color: Colors.white),
+                                        )))),
+                            Expanded(
+                                child: Center(
+                                    child: new InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            worldEventVisibility = false;
+                                          });
+                                        },
+                                        child: Text(
+                                          "No",
+                                          style: TextStyle(
+                                              fontSize: 55,
+                                              color: Colors.white),
+                                        ))))
+                          ],
+                        ))
+                  ]),
+                )),
+            AnimatedOpacity(
+                opacity: giftVisibility ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 500),
+                child: Container(
+                  height: giftVisibility ? double.infinity : 0,
+                  width: double.infinity,
+                  color: Color(0x99000000),
+                  child: Column(children: <Widget>[
+                    SlideTransition(
+                        position: slideAnimation,
+                        child: CustomPaint(
+                          painter: CirclePainter(
+                            rippleController,
+                            color: Colors.white,
+                          ),
+                          child: SizedBox(
+                            width: widget.size * 4.125,
+                            height: widget.size * 4.125,
+                            child: _gift(),
+                          ),
+                        )),
+                    AnimatedOpacity(
+                        opacity: shouldPickGift ? 0 : 1,
+                        duration: Duration(milliseconds: 500),
+                        child: Container(
+                            child: Text(
+                          "Open the gift?",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white, fontSize: 28),
+                        ))),
+                    AnimatedOpacity(
+                        opacity: shouldPickGift ? 0 : 1,
+                        duration: Duration(milliseconds: 500),
+                        child: Container(
+                            margin: EdgeInsets.all(24),
+                            child: Container(
+                                margin: EdgeInsets.only(top: 80),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: <Widget>[
+                                    Expanded(
+                                        child: Center(
+                                            child: new InkWell(
+                                                onTap: () {
+                                                  openGift();
+                                                },
+                                                child: Text(
+                                                  "Yes",
+                                                  style: TextStyle(
+                                                      fontSize: 55,
+                                                      color: Colors.white),
+                                                )))),
+                                    Expanded(
+                                        child: Center(
+                                            child: new InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    giftVisibility = false;
+                                                  });
+                                                },
+                                                child: Text(
+                                                  "No",
+                                                  style: TextStyle(
+                                                      fontSize: 55,
+                                                      color: Colors.white),
+                                                ))))
+                                  ],
+                                ))))
+                  ]),
                 )),
           ],
         ));
